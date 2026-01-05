@@ -1,4 +1,4 @@
-name: Deploy Backend to EKS
+name: Build and Push to ECR
 
 on:
   push:
@@ -8,11 +8,10 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: library-api
-  EKS_CLUSTER_NAME: fproject-dev-eks
 
 jobs:
-  deploy:
-    name: Deploy to EKS
+  build:
+    name: Build and Push
     runs-on: ubuntu-latest
     
     steps:
@@ -48,51 +47,20 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
         
-        echo "Image pushed successfully: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        echo "✅ Image pushed successfully!"
+        echo "Image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-    - name: Update kubeconfig
-      run: |
-        aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
-
-    - name: Deploy to EKS
+    - name: Update k8s manifest with new image tag
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       run: |
-        # 이미지 태그를 새로운 커밋 SHA로 업데이트
-        sed -i "s|324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:latest|$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" k8s-deployment.yaml
+        # k8s-deployment.yaml의 이미지 태그 업데이트
+        sed -i "s|image: 324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" k8s-deployment.yaml
         
-        echo "Creating namespace first..."
-        kubectl create namespace library-api-ns --dry-run=client -o yaml | kubectl apply -f -
-        
-        echo "Waiting for namespace to be ready..."
-        sleep 5
-        
-        echo "Creating DB secret..."
-        kubectl delete secret library-db-secret -n library-api-ns --ignore-not-found
-        kubectl create secret generic library-db-secret \
-          --from-literal=password="$DB_PASSWORD" \
-          -n library-api-ns
-        
-        echo "Applying Kubernetes manifests..."
-        kubectl apply -f k8s-deployment.yaml
-        
-        echo "Waiting for rollout to complete..."
-        kubectl rollout status deployment/library-backend -n library-api-ns --timeout=600s || true
-        
-        echo "Checking pod status..."
-        kubectl get pods -l app=library-backend -n library-api-ns
-        
-        echo "Checking pod details..."
-        kubectl describe pods -l app=library-backend -n library-api-ns | tail -50
-        
-        echo "Checking service status..."
-        kubectl get service library-backend-service -n library-api-ns
-
-    - name: Verify deployment
-      run: |
-        echo "Deployment completed successfully!"
-        echo "You can check the status with:"
-        echo "kubectl get pods -l app=library-backend -n library-api-ns"
-        echo "kubectl logs -l app=library-backend -n library-api-ns"
+        # 변경사항 커밋 (ArgoCD가 감지)
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add k8s-deployment.yaml
+        git diff --staged --quiet || git commit -m "Update image tag to $IMAGE_TAG [skip ci]"
+        git push
