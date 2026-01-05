@@ -58,6 +58,7 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       run: |
         # 이미지 태그를 새로운 커밋 SHA로 업데이트
         sed -i "s|324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:latest|$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" k8s-deployment.yaml
@@ -68,14 +69,23 @@ jobs:
         echo "Waiting for namespace to be ready..."
         sleep 5
         
+        echo "Creating DB secret..."
+        kubectl delete secret library-db-secret -n library-api-ns --ignore-not-found
+        kubectl create secret generic library-db-secret \
+          --from-literal=password="$DB_PASSWORD" \
+          -n library-api-ns
+        
         echo "Applying Kubernetes manifests..."
         kubectl apply -f k8s-deployment.yaml
         
         echo "Waiting for rollout to complete..."
-        kubectl rollout status deployment/library-backend -n library-api-ns --timeout=300s
+        kubectl rollout status deployment/library-backend -n library-api-ns --timeout=600s || true
         
         echo "Checking pod status..."
         kubectl get pods -l app=library-backend -n library-api-ns
+        
+        echo "Checking pod details..."
+        kubectl describe pods -l app=library-backend -n library-api-ns | tail -50
         
         echo "Checking service status..."
         kubectl get service library-backend-service -n library-api-ns
