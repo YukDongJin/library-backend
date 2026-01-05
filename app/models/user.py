@@ -13,9 +13,9 @@ class User(Base):
     """
     사용자 테이블 모델
     - 사용자가 제공한 테이블 구조를 정확히 반영
-    - users 테이블: id(uuid), username(uuid/cognito_id), nickname(text), created_at, updated_at
+    - users_youk 테이블: id(uuid), username(uuid/cognito_id), nickname(text), created_at, updated_at
     """
-    __tablename__ = "users"
+    __tablename__ = "users_youk"
 
     # Primary Key: UUID 타입
     id = Column(

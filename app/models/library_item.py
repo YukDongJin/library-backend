@@ -29,12 +29,12 @@ class LibraryItem(Base):
     """
     라이브러리 아이템 테이블 모델
     - 사용자가 제공한 테이블 구조를 정확히 반영
-    - library_items 테이블: id(uuid), user_profile_id(FK), name(text), type(enum), 
+    - library_items_youk 테이블: id(uuid), user_profile_id(FK), name(text), type(enum), 
       mime_type(varchar), visibility(enum), s3_thumbnail_key(varchar), s3_key(varchar), 
       file_size(bigint), preview_text(text), original_filename(varchar), 
       created_at, updated_at, deleted_at
     """
-    __tablename__ = "library_items"
+    __tablename__ = "library_items_youk"
 
     # Primary Key: UUID 타입
     id = Column(
@@ -48,9 +48,9 @@ class LibraryItem(Base):
     # 사용자 이미지에서 'user_profile_id'로 표시됨
     user_profile_id = Column(
         UUID(as_uuid=True), 
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("users_youk.id", ondelete="CASCADE"),
         nullable=False,
-        comment="소유자 사용자 ID (users 테이블 참조)"
+        comment="소유자 사용자 ID (users_youk 테이블 참조)"
     )
     
     # 아이템 이름 (사용자가 지정한 표시명)

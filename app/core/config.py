@@ -38,12 +38,12 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     
-    # 데이터베이스 설정 (팀장 공유 환경)
-    DATABASE_URL: str = "postgresql://tuser:test123@192.168.0.163:5432/testdb"
-    DB_HOST: str = "192.168.0.163"
+    # 데이터베이스 설정 (AWS RDS)
+    DATABASE_URL: str = "postgresql://fproject_user@fproject-dev-postgres.c9eksq6cmh3c.us-east-1.rds.amazonaws.com:5432/fproject_db"
+    DB_HOST: str = "fproject-dev-postgres.c9eksq6cmh3c.us-east-1.rds.amazonaws.com"
     DB_PORT: int = 5432
-    DB_NAME: str = "testdb"
-    DB_USER: str = "tuser"
+    DB_NAME: str = "fproject_db"
+    DB_USER: str = "fproject_user"
     DB_PASSWORD: str = ""
     
     # AWS Secrets Manager 설정
