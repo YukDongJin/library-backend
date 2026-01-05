@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     DB_SECRET_NAME: str = "library-api/db-password"
     
     # AWS Cognito 설정
-    AWS_REGION: str = "ap-northeast-2"
+    AWS_REGION: str = "us-east-1"
     COGNITO_USER_POOL_ID: str = ""
     COGNITO_CLIENT_ID: str = ""
     
@@ -72,6 +72,7 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "https://www.aws11.shop",
     ]
     
     # 프로젝트 정보
