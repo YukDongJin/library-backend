@@ -42,7 +42,7 @@ jobs:
     - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: ${{ github.run_number }}
       run: |
         echo "Building Docker image..."
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
@@ -58,7 +58,7 @@ jobs:
     - name: Update k8s manifest with new image tag
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
+        IMAGE_TAG: ${{ github.run_number }}
       run: |
         # k8s-deployment.yaml의 이미지 태그 업데이트
         sed -i "s|image: 324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" k8s-deployment.yaml
