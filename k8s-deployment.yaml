@@ -20,7 +20,7 @@ spec:
       serviceAccountName: library-service-account
       containers:
       - name: library
-        image: 324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:631a8cac2a0f5ac555619879ee98325b90d269de
+        image: 324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:11
         ports:
         - containerPort: 8001
           name: http
