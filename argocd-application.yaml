@@ -9,6 +9,8 @@ spec:
     repoURL: https://github.com/YukDongJin/library-backend.git
     targetRevision: main
     path: .
+    directory:
+      include: 'k8s-deployment.yaml'
   destination:
     server: https://kubernetes.default.svc
     namespace: default
