@@ -62,6 +62,12 @@ jobs:
         # 이미지 태그를 새로운 커밋 SHA로 업데이트
         sed -i "s|324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:latest|$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" k8s-deployment.yaml
         
+        echo "Creating namespace first..."
+        kubectl create namespace library-api-ns --dry-run=client -o yaml | kubectl apply -f -
+        
+        echo "Waiting for namespace to be ready..."
+        sleep 5
+        
         echo "Applying Kubernetes manifests..."
         kubectl apply -f k8s-deployment.yaml
         
