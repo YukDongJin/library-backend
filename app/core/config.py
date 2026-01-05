@@ -90,15 +90,13 @@ class Settings(BaseSettings):
     def database_url_sync(self) -> str:
         """동기 데이터베이스 URL (Alembic 마이그레이션용)"""
         # psycopg2 드라이버 사용 (동기)
-        return self.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+        return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     @property
     def database_url_async(self) -> str:
         """비동기 데이터베이스 URL (FastAPI용)"""
         # asyncpg 드라이버 사용 (비동기)
-        if "postgresql+asyncpg://" in self.DATABASE_URL:
-            return self.DATABASE_URL
-        return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+        return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 
 # 전역 설정 인스턴스
