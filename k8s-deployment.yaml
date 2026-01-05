@@ -40,10 +40,11 @@ spec:
         - name: DB_USER
           value: "fproject_user"
         - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: library-db-secret
-              key: password
+          value: ""
+        - name: USE_SECRETS_MANAGER
+          value: "true"
+        - name: DB_SECRET_NAME
+          value: "library-api/db-password"
         - name: AWS_REGION
           value: "us-east-1"
         - name: S3_BUCKET_NAME
@@ -124,19 +125,3 @@ metadata:
   namespace: default
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::324547056370:role/library-secrets-role
-
----
-# AWS Secrets Manager에서 가져오는 간단한 Secret
-apiVersion: v1
-kind: Secret
-metadata:
-  name: library-db-secret
-  namespace: default
-  annotations:
-    # AWS Secrets Manager에서 자동 동기화
-    secrets-manager.io/secret-name: "library-api/db-password"
-    secrets-manager.io/region: "us-east-1"
-type: Opaque
-data:
-  # 이 값은 AWS Secrets Manager에서 자동으로 채워짐
-  password: ""

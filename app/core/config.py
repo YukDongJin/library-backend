@@ -4,6 +4,25 @@
 from pydantic_settings import BaseSettings
 from typing import List
 import os
+import boto3
+import json
+
+
+def get_secret_from_aws(secret_name: str, region: str = "us-east-1") -> str:
+    """AWS Secrets Manager에서 비밀번호 가져오기"""
+    try:
+        client = boto3.client("secretsmanager", region_name=region)
+        response = client.get_secret_value(SecretId=secret_name)
+        secret = response.get("SecretString", "")
+        # JSON 형식이면 파싱
+        try:
+            secret_dict = json.loads(secret)
+            return secret_dict.get("password", secret)
+        except json.JSONDecodeError:
+            return secret
+    except Exception as e:
+        print(f"⚠️ Secrets Manager 호출 실패: {e}")
+        return ""
 
 
 class Settings(BaseSettings):
@@ -25,7 +44,11 @@ class Settings(BaseSettings):
     DB_PORT: int = 5432
     DB_NAME: str = "testdb"
     DB_USER: str = "tuser"
-    DB_PASSWORD: str = "test123"
+    DB_PASSWORD: str = ""
+    
+    # AWS Secrets Manager 설정
+    USE_SECRETS_MANAGER: bool = True
+    DB_SECRET_NAME: str = "library-api/db-password"
     
     # AWS Cognito 설정
     AWS_REGION: str = "ap-northeast-2"
@@ -79,6 +102,18 @@ class Settings(BaseSettings):
 
 # 전역 설정 인스턴스
 settings = Settings()
+
+# Secrets Manager에서 DB 비밀번호 가져오기
+if settings.USE_SECRETS_MANAGER and not settings.DB_PASSWORD:
+    print("🔐 AWS Secrets Manager에서 DB 비밀번호 가져오는 중...")
+    settings.DB_PASSWORD = get_secret_from_aws(
+        settings.DB_SECRET_NAME, 
+        settings.AWS_REGION
+    )
+    if settings.DB_PASSWORD:
+        print("✅ DB 비밀번호 로드 완료")
+    else:
+        print("⚠️ DB 비밀번호를 가져오지 못했습니다")
 
 # 개발 환경에서만 설정 정보 출력
 if settings.DEBUG:
