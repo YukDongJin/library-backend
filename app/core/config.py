@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     AWS_ACCESS_KEY_ID: str = ""
     AWS_SECRET_ACCESS_KEY: str = ""
     S3_BUCKET_NAME: str = ""
-    S3_REGION: str = "ap-northeast-2"
+    S3_REGION: str = "us-east-1"
     
     # JWT 설정
     JWT_SECRET_KEY: str = "your-super-secret-jwt-key-change-this-in-production"
