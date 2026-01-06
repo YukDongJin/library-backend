@@ -140,8 +140,37 @@ async def get_my_library_items(
             has_prev=current_page > 1
         )
         
+        # 각 아이템에 Presigned URL 추가
+        response_items = []
+        for item in items:
+            item_dict = LibraryItemResponse.from_orm(item).dict()
+            
+            # S3 파일 URL 생성
+            if item.s3_key:
+                try:
+                    item_dict["file_url"] = await s3_service.generate_presigned_download_url(
+                        s3_key=item.s3_key,
+                        expires_in=3600  # 1시간
+                    )
+                except Exception as e:
+                    logger.warning(f"파일 URL 생성 실패: {item.s3_key}, {e}")
+                    item_dict["file_url"] = None
+            
+            # 썸네일 URL 생성
+            if item.s3_thumbnail_key:
+                try:
+                    item_dict["thumbnail_url"] = await s3_service.generate_presigned_download_url(
+                        s3_key=item.s3_thumbnail_key,
+                        expires_in=3600
+                    )
+                except Exception as e:
+                    logger.warning(f"썸네일 URL 생성 실패: {item.s3_thumbnail_key}, {e}")
+                    item_dict["thumbnail_url"] = None
+            
+            response_items.append(LibraryItemResponse(**item_dict))
+        
         return PaginatedResponse(
-            data=[LibraryItemResponse.from_orm(item) for item in items],
+            data=response_items,
             pagination=pagination_info,
             message="라이브러리 아이템 목록 조회 성공"
         )
