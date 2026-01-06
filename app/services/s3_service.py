@@ -159,10 +159,16 @@ class S3Service:
                 # 개발 환경에서 더미 URL 반환
                 return f"https://{self.bucket_name}.s3.amazonaws.com/{s3_key}?mock=true"
             
+            # Presigned URL 생성 (IRSA 세션 토큰 자동 포함)
             url = self.s3_client.generate_presigned_url(
                 'get_object',
-                Params={'Bucket': self.bucket_name, 'Key': s3_key},
-                ExpiresIn=expires_in
+                Params={
+                    'Bucket': self.bucket_name,
+                    'Key': s3_key,
+                    'ResponseCacheControl': 'max-age=3600'
+                },
+                ExpiresIn=expires_in,
+                HttpMethod='GET'
             )
             
             return url
