@@ -55,6 +55,9 @@ jobs:
         echo "✅ Image pushed successfully!"
         echo "Image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
+    - name: DEBUG
+      value: "true"
+
     - name: Update k8s manifest with new image tag
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -70,4 +73,3 @@ jobs:
         git diff --staged --quiet || git commit -m "Update image tag to $IMAGE_TAG [skip ci]"
         git push
 
-        
