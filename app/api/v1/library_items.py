@@ -70,8 +70,16 @@ async def create_library_item(
         
         logger.info(f"새 라이브러리 아이템 생성: {item.name} (사용자: {username})")
         
+        # 응답에 file_url 추가 (프록시 URL)
+        backend_base_url = settings.BACKEND_BASE_URL
+        item_dict = LibraryItemResponse.from_orm(item).dict()
+        if item.s3_key:
+            item_dict["file_url"] = f"{backend_base_url}/api/v1/library-items/file/{item.s3_key}"
+        if item.s3_thumbnail_key:
+            item_dict["thumbnail_url"] = f"{backend_base_url}/api/v1/library-items/file/{item.s3_thumbnail_key}"
+        
         return SuccessResponse(
-            data=LibraryItemResponse.from_orm(item),
+            data=LibraryItemResponse(**item_dict),
             message="라이브러리 아이템이 성공적으로 생성되었습니다"
         )
         
