@@ -59,8 +59,8 @@ async def generate_real_presigned_url(
             user_id = "test_user"
             username = "test_user"
         else:
-            user_id = str(current_user.id)
-            username = current_user.username
+            user_id = current_user.user_id
+            username = current_user.nickname or current_user.user_id
 
         upload_info = await s3_service.generate_presigned_upload_url(
             filename=request.filename,
@@ -140,7 +140,7 @@ async def generate_download_url(
                 expires_in=3600
             )
         
-        logger.info(f"다운로드 URL 생성: {item.name} (사용자: {current_user.username})")
+        logger.info(f"다운로드 URL 생성: {item.name} (사용자: {current_user.user_id})")
         
         result = {
             "download_url": download_url,
@@ -199,8 +199,8 @@ async def upload_file_and_get_url(
                 detail="사용자 처리 오류"
             )
         
-        user_id = str(current_user.id)
-        logger.info(f"업로드 사용자: {current_user.username} (ID: {user_id})")
+        user_id = current_user.user_id
+        logger.info(f"업로드 사용자: {current_user.user_id} (ID: {user_id})")
 
         # 파일 검증
         valid, error_msg, file_info = file_service.validate_upload_request(
