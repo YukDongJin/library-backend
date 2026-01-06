@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, get_current_user, get_current_active_user, common_parameters, CommonQueryParams
 from app.crud.user import user_crud
 from app.schemas.user import (
-    UserCreate, UserUpdate, UserResponse, UserListResponse, UserStatsResponse
+    UserCreate, UserUpdate, UserResponse, UserStatsResponse
 )
 from app.schemas.common import SuccessResponse, ErrorResponse, PaginatedResponse, PaginationInfo
 from app.models.user import User
@@ -39,7 +39,7 @@ async def create_user(
         # 사용자 생성
         user = await user_crud.create_user(db, user_in=user_in)
         
-        logger.info(f"새 사용자 생성: {user.username} ({user.nickname})")
+        logger.info(f"새 사용자 생성: {user.user_id} ({user.nickname})")
         
         return SuccessResponse(
             data=UserResponse.from_orm(user),
@@ -96,7 +96,7 @@ async def update_current_user(
     try:
         # 사용자 정보 수정
         updated_user = await user_crud.update_user(
-            db, user_id=str(current_user.id), user_in=user_in
+            db, user_id=current_user.user_id, user_in=user_in
         )
         
         if not updated_user:
@@ -105,7 +105,7 @@ async def update_current_user(
                 detail="사용자를 찾을 수 없습니다"
             )
         
-        logger.info(f"사용자 정보 수정: {updated_user.username}")
+        logger.info(f"사용자 정보 수정: {updated_user.user_id}")
         
         return SuccessResponse(
             data=UserResponse.from_orm(updated_user),
@@ -142,7 +142,7 @@ async def get_current_user_stats(
     try:
         # 사용자 통계 조회
         user_with_stats = await user_crud.get_user_with_stats(
-            db, user_id=str(current_user.id)
+            db, user_id=current_user.user_id
         )
         
         if not user_with_stats:
@@ -180,7 +180,7 @@ async def get_user(
     특정 사용자 정보 조회 API
     """
     try:
-        user = await user_crud.get(db, id=user_id)
+        user = await user_crud.get_by_user_id(db, user_id=user_id)
         
         if not user:
             raise HTTPException(
@@ -302,7 +302,7 @@ async def check_nickname_availability(
     닉네임 사용 가능 여부 확인 API
     """
     try:
-        exclude_user_id = str(current_user.id) if current_user else None
+        exclude_user_id = current_user.user_id if current_user else None
         is_available = await user_crud.is_nickname_available(
             db, nickname=nickname, exclude_user_id=exclude_user_id
         )
