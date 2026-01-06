@@ -3,6 +3,7 @@
 
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import (
     get_db, get_current_user, get_current_active_user, get_current_user_optional,
@@ -20,6 +21,8 @@ from app.models.user import User
 from app.core.config import settings
 from app.services.s3_service import s3_service
 import logging
+import boto3
+from botocore.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -140,32 +143,19 @@ async def get_my_library_items(
             has_prev=current_page > 1
         )
         
-        # 각 아이템에 Presigned URL 추가
+        # 각 아이템에 프록시 URL 추가 (Presigned URL 대신 백엔드 프록시 사용)
         response_items = []
         for item in items:
             item_dict = LibraryItemResponse.from_orm(item).dict()
             
-            # S3 파일 URL 생성
+            # S3 파일 URL 생성 (백엔드 프록시 URL)
             if item.s3_key:
-                try:
-                    item_dict["file_url"] = await s3_service.generate_presigned_download_url(
-                        s3_key=item.s3_key,
-                        expires_in=3600  # 1시간
-                    )
-                except Exception as e:
-                    logger.warning(f"파일 URL 생성 실패: {item.s3_key}, {e}")
-                    item_dict["file_url"] = None
+                # 프록시 URL 형식: /api/v1/library-items/file/{s3_key}
+                item_dict["file_url"] = f"/api/v1/library-items/file/{item.s3_key}"
             
-            # 썸네일 URL 생성
+            # 썸네일 URL 생성 (백엔드 프록시 URL)
             if item.s3_thumbnail_key:
-                try:
-                    item_dict["thumbnail_url"] = await s3_service.generate_presigned_download_url(
-                        s3_key=item.s3_thumbnail_key,
-                        expires_in=3600
-                    )
-                except Exception as e:
-                    logger.warning(f"썸네일 URL 생성 실패: {item.s3_thumbnail_key}, {e}")
-                    item_dict["thumbnail_url"] = None
+                item_dict["thumbnail_url"] = f"/api/v1/library-items/file/{item.s3_thumbnail_key}"
             
             response_items.append(LibraryItemResponse(**item_dict))
         
@@ -576,4 +566,60 @@ async def generate_presigned_url(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="업로드 URL 생성 중 오류가 발생했습니다"
+        )
+
+
+@router.get(
+    "/file/{s3_key:path}",
+    summary="S3 파일 프록시",
+    description="S3 파일을 백엔드를 통해 프록시합니다. IRSA 인증 문제를 우회합니다."
+)
+async def proxy_s3_file(s3_key: str):
+    """
+    S3 파일 프록시 API
+    - IRSA Presigned URL이 외부에서 작동하지 않는 문제 해결
+    - 백엔드가 S3에서 파일을 가져와서 클라이언트에 전달
+    """
+    try:
+        logger.info(f"📥 S3 파일 프록시 요청: {s3_key}")
+        
+        # S3 클라이언트 생성 (IRSA 사용)
+        s3_client = boto3.client(
+            's3',
+            region_name=settings.S3_REGION,
+            config=Config(signature_version='s3v4')
+        )
+        
+        # S3에서 파일 가져오기
+        response = s3_client.get_object(
+            Bucket=settings.S3_BUCKET_NAME,
+            Key=s3_key
+        )
+        
+        content_type = response.get('ContentType', 'application/octet-stream')
+        
+        logger.info(f"✅ S3 파일 프록시 성공: {s3_key} ({content_type})")
+        
+        # 스트리밍 응답으로 반환
+        return StreamingResponse(
+            response['Body'].iter_chunks(),
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f"inline; filename={s3_key.split('/')[-1]}",
+                "Cache-Control": "public, max-age=3600",
+                "Access-Control-Allow-Origin": "*"
+            }
+        )
+        
+    except s3_client.exceptions.NoSuchKey:
+        logger.error(f"❌ S3 파일 없음: {s3_key}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="파일을 찾을 수 없습니다"
+        )
+    except Exception as e:
+        logger.error(f"❌ S3 파일 프록시 오류: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"파일 조회 중 오류가 발생했습니다: {str(e)}"
         )
