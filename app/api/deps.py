@@ -65,39 +65,45 @@ def get_cognito_public_key(token: str, jwks: dict):
 async def verify_cognito_token(token: str) -> Optional[dict]:
     """Cognito JWT 토큰 검증"""
     try:
+        logger.info(f"🔍 토큰 검증 시작 (길이: {len(token)}, 시작: {token[:20]}...)")
+        
         # JWKS 가져오기
         jwks = await get_cognito_jwks()
         if not jwks:
-            logger.error("JWKS를 가져올 수 없음")
+            logger.error("❌ JWKS를 가져올 수 없음")
             return None
         
         # 공개키 가져오기
         public_key = get_cognito_public_key(token, jwks)
         if not public_key:
+            logger.error("❌ 공개키를 찾을 수 없음")
             return None
         
         # 토큰 디코딩 및 검증
+        # options에서 at_hash 검증 스킵 (access_token 없이 idToken만 사용)
         payload = jwt.decode(
             token,
             public_key,
             algorithms=["RS256"],
             audience=settings.COGNITO_CLIENT_ID,
-            issuer=f"https://cognito-idp.{settings.AWS_REGION}.amazonaws.com/{settings.COGNITO_USER_POOL_ID}"
+            issuer=f"https://cognito-idp.{settings.AWS_REGION}.amazonaws.com/{settings.COGNITO_USER_POOL_ID}",
+            options={"verify_at_hash": False}
         )
         
+        logger.info(f"✅ 토큰 검증 성공: sub={payload.get('sub')}")
         return payload
         
     except jwt.ExpiredSignatureError:
-        logger.warning("토큰 만료됨")
+        logger.warning("⚠️ 토큰 만료됨")
         return None
     except jwt.JWTClaimsError as e:
-        logger.warning(f"토큰 클레임 오류: {e}")
+        logger.warning(f"⚠️ 토큰 클레임 오류: {e}")
         return None
     except JWTError as e:
-        logger.warning(f"JWT 검증 실패: {e}")
+        logger.error(f"❌ JWT 검증 실패: {e}", exc_info=True)
         return None
     except Exception as e:
-        logger.error(f"토큰 검증 중 오류: {e}")
+        logger.error(f"❌ 토큰 검증 중 오류: {e}", exc_info=True)
         return None
 
 
@@ -125,28 +131,37 @@ async def get_current_user_optional(
         return None
     
     if not credentials:
+        logger.info("🔍 인증 정보 없음")
         return None
     
     try:
+        logger.info(f"🔍 인증 시도: 토큰 길이={len(credentials.credentials)}")
+        
         # Cognito 토큰 검증
         payload = await verify_cognito_token(credentials.credentials)
         if not payload:
+            logger.warning("⚠️ 토큰 검증 실패")
             return None
         
         # Cognito sub (사용자 고유 ID) 추출
         cognito_sub = payload.get("sub")
         if not cognito_sub:
+            logger.warning("⚠️ 토큰에 sub 없음")
             return None
+        
+        logger.info(f"🔍 사용자 조회: user_id={cognito_sub}")
         
         # 사용자 조회 (회원가입은 팀원 서비스에서 처리)
         user = await user_crud.get_by_user_id(db, user_id=cognito_sub)
         if not user:
-            logger.warning(f"사용자를 찾을 수 없음: {cognito_sub} (회원가입 필요)")
+            logger.warning(f"⚠️ 사용자를 찾을 수 없음: {cognito_sub} (회원가입 필요)")
+        else:
+            logger.info(f"✅ 사용자 인증 성공: {user.user_id}")
         
         return user
         
     except Exception as e:
-        logger.error(f"사용자 인증 중 오류: {e}")
+        logger.error(f"❌ 사용자 인증 중 오류: {e}", exc_info=True)
         return None
 
 

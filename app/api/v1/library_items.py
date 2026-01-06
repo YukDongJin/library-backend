@@ -147,7 +147,7 @@ async def get_my_library_items(
         )
         
     except Exception as e:
-        logger.error(f"라이브러리 아이템 목록 조회 중 오류: {e}")
+        logger.error(f"라이브러리 아이템 목록 조회 중 오류: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="라이브러리 아이템 목록 조회 중 오류가 발생했습니다"
