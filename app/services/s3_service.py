@@ -25,13 +25,17 @@ class S3Service:
         """S3 클라이언트 초기화 (IRSA 사용)"""
         try:
             # IRSA 사용 - Access Key 없이 IAM Role로 인증
+            # signature_version='s3v4' 필수: IRSA Presigned URL 서명 검증을 위해 필요
             self.s3_client = boto3.client(
                 "s3",
                 region_name=settings.S3_REGION,
-                config=Config(s3={"addressing_style": "virtual"}),
+                config=Config(
+                    signature_version='s3v4',
+                    s3={"addressing_style": "virtual"}
+                ),
             )
             self.bucket_name = settings.S3_BUCKET_NAME
-            logger.info(f"✅ S3 클라이언트 초기화 완료 (버킷: {self.bucket_name})")
+            logger.info(f"✅ S3 클라이언트 초기화 완료 (버킷: {self.bucket_name}, signature: s3v4)")
         except NoCredentialsError:
             logger.warning("⚠️ AWS 자격 증명이 설정되지 않음 - 개발 모드로 실행")
             self.s3_client = None
