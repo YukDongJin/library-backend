@@ -66,16 +66,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    # CORS 설정
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-        "https://www.aws11.shop",
-        "https://aws11.shop",
-        "https://library.aws11.shop",
-    ]
+    # CORS 설정 (main.py에서 환경변수로 직접 처리)
+    # ALLOWED_ORIGINS는 k8s-deployment.yaml에서 설정
     
     # 프로젝트 정보
     PROJECT_NAME: str = "Library Management API"
