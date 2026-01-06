@@ -87,7 +87,7 @@ spec:
   ports:
   - port: 8001
     targetPort: 8001
-    NodePort: 31000
+    nodePort: 31000
     protocol: TCP
     name: http
   selector:
@@ -115,7 +115,7 @@ spec:
           service:
             name: library-backend-service
             port:
-              number: 80
+              number: 8001
 
 ---
 apiVersion: v1
