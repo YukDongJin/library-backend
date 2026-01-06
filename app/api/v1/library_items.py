@@ -144,18 +144,20 @@ async def get_my_library_items(
         )
         
         # 각 아이템에 프록시 URL 추가 (Presigned URL 대신 백엔드 프록시 사용)
+        # 절대 URL 사용: CloudFront www.aws11.shop에서 /api/* 라우팅 문제 우회
+        backend_base_url = settings.BACKEND_BASE_URL
+        
         response_items = []
         for item in items:
             item_dict = LibraryItemResponse.from_orm(item).dict()
             
-            # S3 파일 URL 생성 (백엔드 프록시 URL)
+            # S3 파일 URL 생성 (백엔드 프록시 절대 URL)
             if item.s3_key:
-                # 프록시 URL 형식: /api/v1/library-items/file/{s3_key}
-                item_dict["file_url"] = f"/api/v1/library-items/file/{item.s3_key}"
+                item_dict["file_url"] = f"{backend_base_url}/api/v1/library-items/file/{item.s3_key}"
             
-            # 썸네일 URL 생성 (백엔드 프록시 URL)
+            # 썸네일 URL 생성 (백엔드 프록시 절대 URL)
             if item.s3_thumbnail_key:
-                item_dict["thumbnail_url"] = f"/api/v1/library-items/file/{item.s3_thumbnail_key}"
+                item_dict["thumbnail_url"] = f"{backend_base_url}/api/v1/library-items/file/{item.s3_thumbnail_key}"
             
             response_items.append(LibraryItemResponse(**item_dict))
         
