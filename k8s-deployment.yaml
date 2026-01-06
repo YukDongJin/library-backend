@@ -99,17 +99,16 @@ metadata:
   name: library-backend-ingress
   namespace: default
   annotations:
-    kubernetes.io/ingress.class: "alb"
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/group.name: "a3c22a2b065a64df888bad01f3cffa1a"  # 체크된 ALB 사용
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
 spec:
+  ingressClassName: alb
   rules:
-  - host: www.aws11.shop  # 팀원에게 확인 필요
+  - host: library.aws11.shop
     http:
       paths:
-      - path: /library
+      - path: /
         pathType: Prefix
         backend:
           service:
