@@ -49,6 +49,8 @@ spec:
           value: "us-east-1"
         - name: S3_BUCKET_NAME
           value: "library-bucket-youkkk"
+        - name: ALLOWED_ORIGINS
+          value: "*"
         resources:
           requests:
             memory: "256Mi"
