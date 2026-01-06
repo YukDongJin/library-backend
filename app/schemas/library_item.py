@@ -120,7 +120,7 @@ class LibraryItemResponse(LibraryItemBase):
     - API 응답에서 사용
     """
     id: uuid.UUID = Field(description="아이템 고유 ID")
-    user_profile_id: uuid.UUID = Field(description="소유자 사용자 ID")
+    user_id: str = Field(description="소유자 사용자 ID (Cognito sub)")
     mime_type: str = Field(description="MIME 타입")
     s3_key: str = Field(description="S3 파일 키")
     s3_thumbnail_key: Optional[str] = Field(None, description="S3 썸네일 키")
@@ -143,7 +143,7 @@ class LibraryItemResponse(LibraryItemBase):
         schema_extra = {
             "example": {
                 "id": "123e4567-e89b-12d3-a456-426614174000",
-                "user_profile_id": "456e7890-e89b-12d3-a456-426614174001",
+                "user_id": "a1b2c3d4-e5f6-7890-abcd-1234567890ab",
                 "name": "제주도 여행 사진",
                 "type": "image",
                 "visibility": "private",

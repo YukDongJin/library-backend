@@ -52,13 +52,11 @@ class Settings(BaseSettings):
     
     # AWS Cognito 설정
     AWS_REGION: str = "us-east-1"
-    COGNITO_USER_POOL_ID: str = ""
-    COGNITO_CLIENT_ID: str = ""
+    COGNITO_USER_POOL_ID: str = "us-east-1_oesTGe9D5"
+    COGNITO_CLIENT_ID: str = "6ugujl077j6fmcqgptjmn91b7e"
     
-    # AWS S3 설정 (실제 값으로 수정하세요)
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    S3_BUCKET_NAME: str = ""
+    # AWS S3 설정 (IRSA 사용 - Access Key 불필요)
+    S3_BUCKET_NAME: str = "library-bucket-youkkk"
     S3_REGION: str = "us-east-1"
     
     # JWT 설정

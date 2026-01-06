@@ -39,7 +39,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
         Returns:
             사용자의 라이브러리 아이템 리스트
         """
-        query = select(LibraryItem).where(LibraryItem.user_profile_id == user_id)
+        query = select(LibraryItem).where(LibraryItem.user_id == user_id)
         
         if not include_deleted:
             query = query.where(LibraryItem.deleted_at.is_(None))
@@ -73,7 +73,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
         """
         query = select(LibraryItem).where(
             and_(
-                LibraryItem.user_profile_id == user_id,
+                LibraryItem.user_id == user_id,
                 LibraryItem.type == item_type,
                 LibraryItem.deleted_at.is_(None)
             )
@@ -136,7 +136,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
             생성된 라이브러리 아이템
         """
         item_data = item_in.dict()
-        item_data["user_profile_id"] = user_id
+        item_data["user_id"] = user_id
         
         db_item = LibraryItem(**item_data)
         db.add(db_item)
@@ -165,7 +165,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
             수정된 라이브러리 아이템 또는 None
         """
         item = await self.get(db, id=item_id)
-        if not item or str(item.user_profile_id) != user_id:
+        if not item or str(item.user_id) != user_id:
             return None
         
         return await self.update(db, db_obj=item, obj_in=item_in)
@@ -191,7 +191,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
             삭제된 라이브러리 아이템 또는 None
         """
         item = await self.get(db, id=item_id)
-        if not item or str(item.user_profile_id) != user_id:
+        if not item or str(item.user_id) != user_id:
             return None
         
         # S3 파일 삭제 (소프트 삭제든 영구 삭제든 S3 파일은 삭제)
@@ -229,7 +229,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
             복원된 라이브러리 아이템 또는 None
         """
         item = await self.get(db, id=item_id)
-        if not item or str(item.user_profile_id) != user_id:
+        if not item or str(item.user_id) != user_id:
             return None
         
         return await self.restore(db, id=item_id)
@@ -258,7 +258,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
         """
         search_query = select(LibraryItem).where(
             and_(
-                LibraryItem.user_profile_id == user_id,
+                LibraryItem.user_id == user_id,
                 LibraryItem.deleted_at.is_(None),
                 or_(
                     LibraryItem.name.ilike(f"%{query}%"),
@@ -293,7 +293,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
             func.sum(LibraryItem.file_size).label('total_file_size')
         ).where(
             and_(
-                LibraryItem.user_profile_id == user_id,
+                LibraryItem.user_id == user_id,
                 LibraryItem.deleted_at.is_(None)
             )
         )
@@ -307,7 +307,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
             func.count(LibraryItem.id).label('count')
         ).where(
             and_(
-                LibraryItem.user_profile_id == user_id,
+                LibraryItem.user_id == user_id,
                 LibraryItem.deleted_at.is_(None)
             )
         ).group_by(LibraryItem.type)
@@ -321,7 +321,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
         
         recent_query = select(func.count(LibraryItem.id)).where(
             and_(
-                LibraryItem.user_profile_id == user_id,
+                LibraryItem.user_id == user_id,
                 LibraryItem.created_at >= recent_date,
                 LibraryItem.deleted_at.is_(None)
             )
@@ -363,7 +363,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
         """
         query = select(LibraryItem).where(
             and_(
-                LibraryItem.user_profile_id == user_id,
+                LibraryItem.user_id == user_id,
                 LibraryItem.deleted_at.is_(None)
             )
         )
@@ -404,7 +404,7 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
             아이템 수
         """
         query = select(func.count(LibraryItem.id)).where(
-            LibraryItem.user_profile_id == user_id
+            LibraryItem.user_id == user_id
         )
         
         if not include_deleted:

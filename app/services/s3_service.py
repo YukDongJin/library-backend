@@ -1,5 +1,5 @@
-# 📁 새로 생성된 파일: app/services/s3_service.py
-# AWS S3 파일 업로드 서비스
+# 📁 app/services/s3_service.py
+# AWS S3 파일 업로드 서비스 (IRSA 사용)
 
 import boto3
 from botocore.config import Config
@@ -16,25 +16,22 @@ logger = logging.getLogger(__name__)
 class S3Service:
     """
     AWS S3 파일 업로드 서비스
+    - IRSA (IAM Role for Service Account) 사용
     - Presigned URL 생성
     - 파일 업로드/다운로드
-    - 썸네일 생성 및 관리
     """
     
     def __init__(self):
-        """S3 클라이언트 초기화"""
+        """S3 클라이언트 초기화 (IRSA 사용)"""
         try:
-            endpoint_url = f"https://s3.{settings.S3_REGION}.amazonaws.com"
+            # IRSA 사용 - Access Key 없이 IAM Role로 인증
             self.s3_client = boto3.client(
                 "s3",
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
                 region_name=settings.S3_REGION,
-                endpoint_url=endpoint_url,
                 config=Config(s3={"addressing_style": "virtual"}),
             )
             self.bucket_name = settings.S3_BUCKET_NAME
-            logger.info("✅ S3 클라이언트 초기화 완료")
+            logger.info(f"✅ S3 클라이언트 초기화 완료 (버킷: {self.bucket_name})")
         except NoCredentialsError:
             logger.warning("⚠️ AWS 자격 증명이 설정되지 않음 - 개발 모드로 실행")
             self.s3_client = None
@@ -48,39 +45,32 @@ class S3Service:
         """
         S3 키 생성 (파일 경로)
         
-        Args:
-            filename: 원본 파일명
-            user_id: 사용자 ID
-            
-        Returns:
-            S3 키 (예: uploads/2024/12/user123/uuid-filename.jpg)
+        형식: {user_id}/{년도}-{월}/{uuid}.{확장자}
+        예시: a1b2c3d4/2026-01/550e8400-e29b-41d4.jpg
         """
         now = datetime.utcnow()
         file_extension = filename.split('.')[-1] if '.' in filename else ''
         unique_filename = f"{uuid.uuid4()}.{file_extension}" if file_extension else str(uuid.uuid4())
         
-        s3_key = f"uploads/{now.year}/{now.month:02d}/{user_id}/{unique_filename}"
+        s3_key = f"{user_id}/{now.year}-{now.month:02d}/{unique_filename}"
         return s3_key
 
     def generate_thumbnail_key(self, s3_key: str) -> str:
         """
         썸네일 S3 키 생성
         
-        Args:
-            s3_key: 원본 파일 S3 키
-            
-        Returns:
-            썸네일 S3 키
+        형식: {user_id}/{년도}-{월}/thumbs/{uuid}_thumb.{확장자}
         """
-        # uploads/2024/12/user123/uuid.jpg -> thumbnails/2024/12/user123/uuid_thumb.jpg
-        path_parts = s3_key.split('/')
-        filename = path_parts[-1]
+        path_parts = s3_key.rsplit('/', 1)
+        if len(path_parts) == 2:
+            folder, filename = path_parts
+        else:
+            folder, filename = '', path_parts[0]
+        
         name, ext = filename.rsplit('.', 1) if '.' in filename else (filename, '')
-        
         thumbnail_filename = f"{name}_thumb.{ext}" if ext else f"{name}_thumb"
-        thumbnail_key = f"thumbnails/{'/'.join(path_parts[1:-1])}/{thumbnail_filename}"
         
-        return thumbnail_key
+        return f"{folder}/thumbs/{thumbnail_filename}"
 
     async def generate_presigned_upload_url(
         self,

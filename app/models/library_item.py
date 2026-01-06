@@ -1,4 +1,4 @@
-# 📁 새로 생성된 파일: app/models/library_item.py
+# 📁 app/models/library_item.py
 # 라이브러리 아이템 테이블 SQLAlchemy 모델
 
 from sqlalchemy import Column, String, DateTime, Text, BigInteger, ForeignKey, Enum
@@ -28,13 +28,10 @@ class VisibilityType(enum.Enum):
 class LibraryItem(Base):
     """
     라이브러리 아이템 테이블 모델
-    - 사용자가 제공한 테이블 구조를 정확히 반영
-    - library_items_youk 테이블: id(uuid), user_profile_id(FK), name(text), type(enum), 
-      mime_type(varchar), visibility(enum), s3_thumbnail_key(varchar), s3_key(varchar), 
-      file_size(bigint), preview_text(text), original_filename(varchar), 
-      created_at, updated_at, deleted_at
+    - library_items 테이블 사용
+    - users.user_id (VARCHAR) 참조
     """
-    __tablename__ = "library_items_youk"
+    __tablename__ = "library_items"
 
     # Primary Key: UUID 타입
     id = Column(
@@ -44,13 +41,12 @@ class LibraryItem(Base):
         comment="라이브러리 아이템 고유 ID (UUID)"
     )
     
-    # Foreign Key: 사용자 ID 참조
-    # 사용자 이미지에서 'user_profile_id'로 표시됨
-    user_profile_id = Column(
-        UUID(as_uuid=True), 
-        ForeignKey("users_youk.id", ondelete="CASCADE"),
+    # Foreign Key: 사용자 ID 참조 (users.user_id - VARCHAR)
+    user_id = Column(
+        String(255), 
+        ForeignKey("users.user_id", ondelete="CASCADE"),
         nullable=False,
-        comment="소유자 사용자 ID (users_youk 테이블 참조)"
+        comment="소유자 사용자 ID (users 테이블 참조)"
     )
     
     # 아이템 이름 (사용자가 지정한 표시명)
@@ -181,12 +177,10 @@ class LibraryItem(Base):
         self.deleted_at = None
 
     def to_dict(self):
-        """
-        모델을 딕셔너리로 변환 (API 응답용)
-        """
+        """모델을 딕셔너리로 변환 (API 응답용)"""
         return {
             "id": str(self.id),
-            "user_profile_id": str(self.user_profile_id),
+            "user_id": self.user_id,
             "name": self.name,
             "type": self.type.value,
             "mime_type": self.mime_type,

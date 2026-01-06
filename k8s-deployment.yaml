@@ -26,13 +26,11 @@ spec:
           name: http
         env:
         - name: DEBUG
-          value: "true"
+          value: "false"
         - name: HOST
           value: "0.0.0.0"
         - name: PORT
           value: "8001"
-        - name: DEBUG
-          value: "true"
         - name: DB_HOST
           value: "fproject-dev-postgres.c9eksq6cmh3c.us-east-1.rds.amazonaws.com"
         - name: DB_PORT
@@ -53,6 +51,10 @@ spec:
           value: "library-bucket-youkkk"
         - name: ALLOWED_ORIGINS
           value: "*"
+        - name: COGNITO_USER_POOL_ID
+          value: "us-east-1_oesTGe9D5"
+        - name: COGNITO_CLIENT_ID
+          value: "6ugujl077j6fmcqgptjmn91b7e"
         resources:
           requests:
             memory: "256Mi"

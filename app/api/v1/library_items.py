@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import (
     get_db, get_current_user, get_current_active_user, get_current_user_optional,
-    common_parameters, CommonQueryParams, check_item_ownership
+    common_parameters, CommonQueryParams
 )
 from app.crud.library_item import library_item_crud
 from app.crud.user import user_crud
@@ -27,16 +27,17 @@ router = APIRouter()
 
 
 async def resolve_current_user(db: AsyncSession, current_user: Optional[User]):
+    """현재 사용자 정보 반환 (user_id, nickname)"""
     if current_user:
-        return str(current_user.id), current_user.username
+        return current_user.user_id, current_user.nickname or current_user.user_id
     if not settings.DEBUG:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
-    test_user = await user_crud.get_by_username(db, username="test_user")
+    test_user = await user_crud.get_by_user_id(db, user_id="test_user")
     if not test_user:
         test_user = await user_crud.create_user(
-            db, user_in=UserCreate(username="test_user", nickname="test_user")
+            db, user_in=UserCreate(user_id="test_user", nickname="테스트유저", email="test@test.com")
         )
-    return str(test_user.id), test_user.username
+    return test_user.user_id, test_user.nickname
 
 
 @router.post(
@@ -277,7 +278,7 @@ async def get_library_item(
             )
         
         # 접근 권한 확인
-        is_owner = current_user and str(item.user_profile_id) == str(current_user.id)
+        is_owner = current_user and str(item.user_id) == str(current_user.user_id)
         is_public = item.visibility == VisibilityType.public
         
         if not (is_owner or is_public):
@@ -512,13 +513,13 @@ async def generate_presigned_url(
             if not settings.DEBUG:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="??? ?????",
+                    detail="인증이 필요합니다",
                 )
             user_id = "test_user"
-            username = "test_user"
+            nickname = "테스트유저"
         else:
-            user_id = str(current_user.id)
-            username = current_user.username
+            user_id = current_user.user_id
+            nickname = current_user.nickname or current_user.user_id
 
         upload_info = await s3_service.generate_presigned_upload_url(
             filename=request.filename,
@@ -526,7 +527,7 @@ async def generate_presigned_url(
             user_id=user_id
         )
         
-        logger.info(f"Presigned URL 생성: {request.filename} (사용자: {username})")
+        logger.info(f"Presigned URL 생성: {request.filename} (사용자: {nickname})")
         
         return SuccessResponse(
             data=PresignedUrlResponse(
