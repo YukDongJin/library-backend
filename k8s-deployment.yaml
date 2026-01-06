@@ -31,6 +31,8 @@ spec:
           value: "0.0.0.0"
         - name: PORT
           value: "8001"
+        - name: DEBUG
+          value: "true"
         - name: DB_HOST
           value: "fproject-dev-postgres.c9eksq6cmh3c.us-east-1.rds.amazonaws.com"
         - name: DB_PORT
