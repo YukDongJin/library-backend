@@ -48,7 +48,7 @@ spec:
         - name: AWS_REGION
           value: "us-east-1"
         - name: S3_BUCKET_NAME
-          value: "library-bucket-youkkk"
+          value: "knowledge-base-test-6575574"
         - name: ALLOWED_ORIGINS
           value: "*"
         - name: COGNITO_USER_POOL_ID
