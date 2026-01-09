@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     COGNITO_CLIENT_ID: str = "6ugujl077j6fmcqgptjmn91b7e"
     
     # AWS S3 설정 (IRSA 사용 - Access Key 불필요)
-    S3_BUCKET_NAME: str = "library-bucket-youkkk"
+    S3_BUCKET_NAME: str = "knowledge-base-test-6575574"
     S3_REGION: str = "us-east-1"
     
     # 백엔드 기본 URL (파일 프록시용)

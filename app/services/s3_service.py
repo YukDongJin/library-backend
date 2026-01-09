@@ -51,21 +51,22 @@ class S3Service:
         """
         S3 키 생성 (파일 경로)
         
-        형식: {user_id}/{년도}-{월}/{uuid}.{확장자}
-        예시: a1b2c3d4/2026-01/550e8400-e29b-41d4.jpg
+        형식: {user_id}/library/{년도}/{월}/{uuid}.{확장자}
+        예시: 14780408-6031-704d-19af-ab1893f6b8e5/library/2026/01/550e8400-e29b-41d4.jpg
         """
         now = datetime.utcnow()
         file_extension = filename.split('.')[-1] if '.' in filename else ''
         unique_filename = f"{uuid.uuid4()}.{file_extension}" if file_extension else str(uuid.uuid4())
         
-        s3_key = f"{user_id}/{now.year}-{now.month:02d}/{unique_filename}"
+        s3_key = f"{user_id}/library/{now.year}/{now.month:02d}/{unique_filename}"
         return s3_key
 
     def generate_thumbnail_key(self, s3_key: str) -> str:
         """
         썸네일 S3 키 생성
         
-        형식: {user_id}/{년도}-{월}/thumbs/{uuid}_thumb.{확장자}
+        형식: {user_id}/library/{년도}/{월}/thumbs/{uuid}_thumb.{확장자}
+        예시: 14780408-6031-704d-19af-ab1893f6b8e5/library/2026/01/thumbs/550e8400_thumb.jpg
         """
         path_parts = s3_key.rsplit('/', 1)
         if len(path_parts) == 2:
