@@ -21,7 +21,7 @@ spec:
       serviceAccountName: library-service-account
       containers:
       - name: library
-        image: 324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:42
+        image: 324547056370.dkr.ecr.ap-northeast-2.amazonaws.com/library-api:42
         ports:
         - containerPort: 8001
           name: http
@@ -33,13 +33,13 @@ spec:
         - name: PORT
           value: "8001"
         - name: DB_HOST
-          value: "fproject-dev-postgres.c9eksq6cmh3c.us-east-1.rds.amazonaws.com"
+          value: "one-postgres.cricim2es6bi.ap-northeast-2.rds.amazonaws.com"
         - name: DB_PORT
           value: "5432"
         - name: DB_NAME
-          value: "fproject_db"
+          value: "onedb"
         - name: DB_USER
-          value: "fproject_user"
+          value: "oneuser"
         - name: DB_PASSWORD
           value: ""
         - name: USE_SECRETS_MANAGER
@@ -47,15 +47,15 @@ spec:
         - name: DB_SECRET_NAME
           value: "library-api/db-password"
         - name: AWS_REGION
-          value: "us-east-1"
+          value: "ap-northeast-2"
         - name: S3_BUCKET_NAME
           value: "knowledge-base-test-6575574"
         - name: ALLOWED_ORIGINS
           value: "*"
         - name: COGNITO_USER_POOL_ID
-          value: "us-east-1_oesTGe9D5"
+          value: "ap-northeast-2_mFvtIc1kQ"
         - name: COGNITO_CLIENT_ID
-          value: "6ugujl077j6fmcqgptjmn91b7e"
+          value: "3c0kds3554rvakp9piqv694at2"
         - name: BACKEND_BASE_URL
           value: "https://library.aws11.shop"
         resources:

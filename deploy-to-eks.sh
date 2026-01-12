@@ -4,10 +4,10 @@
 set -e
 
 # 설정
-AWS_REGION="us-east-1"
+AWS_REGION="ap-northeast-2"
 AWS_ACCOUNT_ID="324547056370"
 ECR_REPOSITORY="library-api"  # 내 전용 레포지토리
-EKS_CLUSTER_NAME="fproject-dev-eks"
+EKS_CLUSTER_NAME="one"
 IMAGE_TAG="latest"
 
 # 색상 코드
@@ -67,19 +67,19 @@ kubectl apply -f k8s-deployment.yaml
 
 # 8. 배포 상태 확인
 echo -e "${YELLOW}8. 배포 상태 확인...${NC}"
-kubectl rollout status deployment/library-backend -n library-api-ns
+kubectl rollout status deployment/library-backend -n default
 
 # 9. Pod 상태 확인
 echo -e "${YELLOW}9. Pod 상태 확인...${NC}"
-kubectl get pods -l app=library-backend -n library-api-ns
+kubectl get pods -l app=library-backend -n default
 
 # 10. 서비스 확인
 echo -e "${YELLOW}10. 서비스 확인...${NC}"
-kubectl get service library-backend-service -n library-api-ns
+kubectl get service library-backend-service -n default
 
 echo -e "${GREEN}=== 배포 완료! ===${NC}"
 echo ""
 echo "다음 명령어로 상태를 확인할 수 있습니다:"
-echo "kubectl get pods -l app=library-backend -n library-api-ns"
-echo "kubectl logs -l app=library-backend -n library-api-ns"
-echo "kubectl describe service library-backend-service -n library-api-ns"
+echo "kubectl get pods -l app=library-backend -n default"
+echo "kubectl logs -l app=library-backend -n default"
+echo "kubectl describe service library-backend-service -n default"
