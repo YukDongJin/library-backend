@@ -1,9 +1,9 @@
-# 최종 수정
+# 버지니아 리전 (us-east-1) 배포용
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: library-backend  # 내 고유 이름으로 변경
-  namespace: default    # 내 전용 네임스페이스
+  name: library-backend
+  namespace: default
   labels:
     app: library-backend
     version: v1
@@ -21,9 +21,9 @@ spec:
       serviceAccountName: library-service-account
       containers:
       - name: library
-        image: 324547056370.dkr.ecr.ap-northeast-2.amazonaws.com/library-api:45
+        image: 324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:latest
         ports:
-        - containerPort: 8001
+        - containerPort: 8000
           name: http
         env:
         - name: DEBUG
@@ -31,9 +31,9 @@ spec:
         - name: HOST
           value: "0.0.0.0"
         - name: PORT
-          value: "8001"
+          value: "8000"
         - name: DB_HOST
-          value: "one-postgres.cricim2es6bi.ap-northeast-2.rds.amazonaws.com"
+          value: "fproject-dev-postgres.c9eksq6cmh3c.us-east-1.rds.amazonaws.com"
         - name: DB_PORT
           value: "5432"
         - name: DB_NAME
@@ -47,17 +47,17 @@ spec:
         - name: DB_SECRET_NAME
           value: "library-api/db-password"
         - name: AWS_REGION
-          value: "ap-northeast-2"
+          value: "us-east-1"
         - name: S3_BUCKET_NAME
           value: "knowledge-base-test-6575574"
         - name: ALLOWED_ORIGINS
-          value: "*"
+          value: "https://api.aws11.shop"
         - name: COGNITO_USER_POOL_ID
-          value: "ap-northeast-2_mFvtIc1kQ"
+          value: "us-east-1_oesTGe9D5"
         - name: COGNITO_CLIENT_ID
-          value: "3c0kds3554rvakp9piqv694at2"
+          value: "6ugujl077j6fmcqgptjmn91b7e"
         - name: BACKEND_BASE_URL
-          value: "https://library.aws11.shop"
+          value: "https://api.aws11.shop"
         resources:
           requests:
             memory: "256Mi"
@@ -67,14 +67,14 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /health
-            port: 8001
+            path: /library/health
+            port: 8000
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /health
-            port: 8001
+            path: /library/health
+            port: 8000
           initialDelaySeconds: 5
           periodSeconds: 5
         securityContext:
@@ -92,11 +92,10 @@ metadata:
   labels:
     app: library-backend
 spec:
-  type: NodePort
+  type: ClusterIP
   ports:
-  - port: 8001
-    targetPort: 8001
-    nodePort: 31000
+  - port: 8000
+    targetPort: 8000
     protocol: TCP
     name: http
   selector:

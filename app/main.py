@@ -86,9 +86,9 @@ app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description=settings.DESCRIPTION,
-    openapi_url="/api/v1/openapi.json",
-    docs_url="/api/v1/docs",
-    redoc_url="/api/v1/redoc",
+    openapi_url="/library/openapi.json",
+    docs_url="/library/docs",
+    redoc_url="/library/redoc",
     lifespan=lifespan
 )
 
@@ -139,14 +139,26 @@ async def root():
     return {
         "message": f"Welcome to {settings.PROJECT_NAME}",
         "version": settings.VERSION,
-        "docs": "/api/v1/docs",
-        "redoc": "/api/v1/redoc"
+        "docs": "/library/docs",
+        "redoc": "/library/redoc"
     }
 
 
-# 헬스체크 엔드포인트
+# /library 루트 엔드포인트
+@app.get("/library", include_in_schema=False)
+async def library_root():
+    """Library API 루트 엔드포인트"""
+    return {
+        "message": f"Welcome to {settings.PROJECT_NAME}",
+        "version": settings.VERSION,
+        "docs": "/library/docs",
+        "redoc": "/library/redoc"
+    }
+
+
+# 헬스체크 엔드포인트 (ALB 헬스체크용 - /library/health)
 @app.get(
-    "/health",
+    "/library/health",
     response_model=HealthCheckResponse,
     summary="헬스체크",
     description="애플리케이션 및 데이터베이스 상태를 확인합니다.",
@@ -172,10 +184,23 @@ async def health_check():
         )
 
 
-# API v1 라우터 포함
+# 기존 /health도 유지 (로컬 테스트용)
+@app.get("/health", include_in_schema=False)
+async def health_check_legacy():
+    """레거시 헬스체크 (로컬 테스트용)"""
+    db_status = "connected" if await test_connection() else "disconnected"
+    return HealthCheckResponse(
+        status="healthy",
+        timestamp=datetime.utcnow(),
+        version=settings.VERSION,
+        database=db_status
+    )
+
+
+# API v1 라우터 포함 (/library 경로 - api/v1 제거)
 app.include_router(
     api_router,
-    prefix="/api/v1"
+    prefix="/library"
 )
 
 

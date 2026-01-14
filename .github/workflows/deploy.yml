@@ -6,8 +6,9 @@ on:
   workflow_dispatch:
 
 env:
-  AWS_REGION: ap-northeast-2
+  AWS_REGION: us-east-1
   ECR_REPOSITORY: library-api
+  EKS_CLUSTER_NAME: fproject-dev-eks
 
 permissions:
   contents: write
@@ -61,7 +62,7 @@ jobs:
         IMAGE_TAG: ${{ github.run_number }}
       run: |
         # k8s-deployment.yaml의 이미지 태그 업데이트
-        sed -i "s|image: 324547056370.dkr.ecr.ap-northeast-2.amazonaws.com/library-api:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" k8s-deployment.yaml
+        sed -i "s|image: 324547056370.dkr.ecr.us-east-1.amazonaws.com/library-api:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|g" k8s-deployment.yaml
         
         # 변경사항 커밋 (ArgoCD가 감지)
         git config user.name "GitHub Actions"

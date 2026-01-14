@@ -3,11 +3,11 @@
 # Backend EKS 배포 스크립트
 set -e
 
-# 설정
-AWS_REGION="ap-northeast-2"
+# 설정 (버지니아 리전)
+AWS_REGION="us-east-1"
 AWS_ACCOUNT_ID="324547056370"
-ECR_REPOSITORY="library-api"  # 내 전용 레포지토리
-EKS_CLUSTER_NAME="one"
+ECR_REPOSITORY="library-api"
+EKS_CLUSTER_NAME="fproject-dev-eks"
 IMAGE_TAG="latest"
 
 # 색상 코드
