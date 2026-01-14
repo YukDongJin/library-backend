@@ -32,20 +32,11 @@ spec:
           value: "0.0.0.0"
         - name: PORT
           value: "8000"
-        - name: DB_HOST
-          value: "fproject-dev-postgres.c9eksq6cmh3c.us-east-1.rds.amazonaws.com"
-        - name: DB_PORT
-          value: "5432"
-        - name: DB_NAME
-          value: "onedb"
-        - name: DB_USER
-          value: "oneuser"
-        - name: DB_PASSWORD
-          value: ""
+        # DB 정보는 Secrets Manager에서 가져옴 (시크릿명: database)
         - name: USE_SECRETS_MANAGER
           value: "true"
         - name: DB_SECRET_NAME
-          value: "library-api/db-password"
+          value: "database"
         - name: AWS_REGION
           value: "us-east-1"
         - name: S3_BUCKET_NAME
