@@ -42,7 +42,7 @@ spec:
         - name: S3_BUCKET_NAME
           value: "knowledge-base-test-6575574"
         - name: ALLOWED_ORIGINS
-          value: "https://api.aws11.shop"
+          value: "https://www.aws11.shop,https://aws11.shop,http://localhost:3000"
         - name: COGNITO_USER_POOL_ID
           value: "us-east-1_oesTGe9D5"
         - name: COGNITO_CLIENT_ID
