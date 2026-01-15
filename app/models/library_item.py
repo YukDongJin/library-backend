@@ -158,13 +158,15 @@ class LibraryItem(Base):
     def file_url(self):
         """S3 파일 프록시 URL 생성"""
         # 백엔드 프록시를 통해 파일 제공 (IRSA 인증 문제 우회)
-        return f"https://library.aws11.shop/api/v1/library-items/file/{self.s3_key}"
+        from app.core.config import settings
+        return f"{settings.BACKEND_BASE_URL}/library/library-items/file/{self.s3_key}"
 
     @property
     def thumbnail_url(self):
         """S3 썸네일 프록시 URL 생성"""
         if self.s3_thumbnail_key:
-            return f"https://library.aws11.shop/api/v1/library-items/file/{self.s3_thumbnail_key}"
+            from app.core.config import settings
+            return f"{settings.BACKEND_BASE_URL}/library/library-items/file/{self.s3_thumbnail_key}"
         return None
 
     def soft_delete(self):
