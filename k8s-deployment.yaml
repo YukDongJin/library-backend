@@ -39,6 +39,8 @@ spec:
           value: "database"
         - name: AWS_REGION
           value: "us-east-1"
+        - name: S3_REGION
+          value: "ap-northeast-2"
         - name: S3_BUCKET_NAME
           value: "dr-test-library"
         - name: ALLOWED_ORIGINS
