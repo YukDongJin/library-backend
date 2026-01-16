@@ -271,6 +271,32 @@ class S3Service:
             logger.error(f"S3 파일 정보 조회 실패: {e}")
             return None
 
+    def file_exists(self, s3_key: str) -> bool:
+        """
+        S3 파일 존재 여부 확인
+        
+        Args:
+            s3_key: 파일 S3 키
+            
+        Returns:
+            파일 존재 여부 (True/False)
+        """
+        try:
+            if not self.s3_client:
+                # 개발 환경에서는 항상 존재한다고 가정
+                return True
+            
+            self.s3_client.head_object(Bucket=self.bucket_name, Key=s3_key)
+            return True
+            
+        except ClientError as e:
+            error_code = e.response.get('Error', {}).get('Code', '')
+            if error_code == '404' or error_code == 'NoSuchKey':
+                logger.info(f"S3 파일 없음: {s3_key}")
+                return False
+            logger.error(f"S3 파일 존재 확인 실패: {e}")
+            return False
+
     def is_image_file(self, content_type: str) -> bool:
         """이미지 파일 여부 확인"""
         return content_type.startswith('image/')

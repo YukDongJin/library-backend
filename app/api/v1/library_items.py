@@ -99,6 +99,7 @@ async def get_my_library_items(
 ) -> PaginatedResponse[LibraryItemResponse]:
     """
     내 라이브러리 아이템 목록 조회 API
+    - S3에서 파일이 삭제된 경우 자동으로 soft delete 처리
     """
     try:
         user_id, _ = await resolve_current_user(db, current_user)
@@ -130,8 +131,26 @@ async def get_my_library_items(
                 db, user_id=user_id, include_deleted=include_deleted
             )
         
+        # S3 파일 존재 여부 확인 및 없는 파일 자동 soft delete
+        valid_items = []
+        deleted_count = 0
+        
+        for item in items:
+            # S3에 파일이 존재하는지 확인
+            if s3_service.file_exists(item.s3_key):
+                valid_items.append(item)
+            else:
+                # S3에 파일이 없으면 자동으로 soft delete 처리
+                logger.warning(f"⚠️ S3 파일 없음, 자동 soft delete: {item.s3_key} (아이템: {item.name})")
+                await library_item_crud.soft_delete(db, id=str(item.id))
+                deleted_count += 1
+        
+        if deleted_count > 0:
+            logger.info(f"🗑️ S3에서 삭제된 파일 {deleted_count}개 자동 정리 완료")
+            total -= deleted_count
+        
         # 페이지네이션 정보 계산
-        pages = (total + commons.limit - 1) // commons.limit
+        pages = max(1, (total + commons.limit - 1) // commons.limit)
         current_page = (commons.skip // commons.limit) + 1
         
         pagination_info = PaginationInfo(
@@ -144,7 +163,7 @@ async def get_my_library_items(
         )
         
         # 각 아이템을 응답 형식으로 변환 (file_url은 모델 property에서 자동 생성)
-        response_items = [LibraryItemResponse.from_orm(item) for item in items]
+        response_items = [LibraryItemResponse.from_orm(item) for item in valid_items]
         
         return PaginatedResponse(
             data=response_items,
