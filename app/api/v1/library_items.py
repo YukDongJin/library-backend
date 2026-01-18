@@ -121,14 +121,14 @@ async def get_my_library_items(
                 db, user_id=user_id, item_type=item_type
             )
         else:
-            # 일반 목록 조회
+            # 일반 목록 조회 (자동 복원을 위해 삭제된 아이템도 함께 조회)
             items = await library_item_crud.get_by_user(
                 db, user_id=user_id,
                 skip=commons.skip, limit=commons.limit,
-                include_deleted=include_deleted
+                include_deleted=True  # 자동 복원을 위해 항상 True
             )
             total = await library_item_crud.count_user_items(
-                db, user_id=user_id, include_deleted=include_deleted
+                db, user_id=user_id, include_deleted=False  # 활성 아이템 수만 카운트
             )
         
         # S3 파일 존재 여부 확인 및 자동 동기화
@@ -149,7 +149,9 @@ async def get_my_library_items(
                     # 복원된 아이템 다시 조회
                     item = await library_item_crud.get(db, id=str(item.id))
                 
-                valid_items.append(item)
+                # 사용자가 삭제된 아이템 포함을 요청했거나, 활성 아이템인 경우만 반환
+                if include_deleted or item.deleted_at is None:
+                    valid_items.append(item)
             else:
                 # S3에 파일이 없으면 자동으로 soft delete 처리
                 if item.deleted_at is None:
@@ -159,11 +161,14 @@ async def get_my_library_items(
         
         if deleted_count > 0:
             logger.info(f"🗑️ S3에서 삭제된 파일 {deleted_count}개 자동 정리 완료")
-            total -= deleted_count
         
         if restored_count > 0:
             logger.info(f"✅ S3에서 복구된 파일 {restored_count}개 자동 복원 완료")
-            total += restored_count
+        
+        # 최종 total 재계산 (복원/삭제 반영)
+        total = await library_item_crud.count_user_items(
+            db, user_id=user_id, include_deleted=include_deleted
+        )
         
         # 페이지네이션 정보 계산
         pages = max(1, (total + commons.limit - 1) // commons.limit)
