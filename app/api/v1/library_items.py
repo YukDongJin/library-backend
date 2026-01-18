@@ -131,23 +131,39 @@ async def get_my_library_items(
                 db, user_id=user_id, include_deleted=include_deleted
             )
         
-        # S3 파일 존재 여부 확인 및 없는 파일 자동 soft delete
+        # S3 파일 존재 여부 확인 및 자동 동기화
         valid_items = []
         deleted_count = 0
+        restored_count = 0
         
         for item in items:
-            # S3에 파일이 존재하는지 확인
-            if s3_service.file_exists(item.s3_key):
+            s3_exists = s3_service.file_exists(item.s3_key)
+            
+            # S3에 파일이 존재하는 경우
+            if s3_exists:
+                # DB에서 삭제된 상태였다면 자동 복원
+                if item.deleted_at is not None:
+                    logger.info(f"🔄 S3 파일 복구 감지, 자동 복원: {item.s3_key} (아이템: {item.name})")
+                    await library_item_crud.restore(db, id=str(item.id))
+                    restored_count += 1
+                    # 복원된 아이템 다시 조회
+                    item = await library_item_crud.get(db, id=str(item.id))
+                
                 valid_items.append(item)
             else:
                 # S3에 파일이 없으면 자동으로 soft delete 처리
-                logger.warning(f"⚠️ S3 파일 없음, 자동 soft delete: {item.s3_key} (아이템: {item.name})")
-                await library_item_crud.soft_delete(db, id=str(item.id))
-                deleted_count += 1
+                if item.deleted_at is None:
+                    logger.warning(f"⚠️ S3 파일 없음, 자동 soft delete: {item.s3_key} (아이템: {item.name})")
+                    await library_item_crud.soft_delete(db, id=str(item.id))
+                    deleted_count += 1
         
         if deleted_count > 0:
             logger.info(f"🗑️ S3에서 삭제된 파일 {deleted_count}개 자동 정리 완료")
             total -= deleted_count
+        
+        if restored_count > 0:
+            logger.info(f"✅ S3에서 복구된 파일 {restored_count}개 자동 복원 완료")
+            total += restored_count
         
         # 페이지네이션 정보 계산
         pages = max(1, (total + commons.limit - 1) // commons.limit)
