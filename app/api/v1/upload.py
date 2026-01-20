@@ -303,12 +303,13 @@ async def upload_file_and_get_url(
 async def preview_generation_callback(
     item_id: str = Form(...),
     preview_key: str = Form(...),
+    thumbnail_key: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db)
 ) -> SuccessResponse[Dict[str, str]]:
     """
     프리뷰 생성 완료 콜백 API
     - Step Functions 완료 후 Lambda에서 호출
-    - DB에 프리뷰 키 업데이트
+    - DB에 프리뷰 키 및 썸네일 키 업데이트
     """
     try:
         # 아이템 조회
@@ -321,17 +322,28 @@ async def preview_generation_callback(
         
         # 프리뷰 키 업데이트
         item.s3_preview_key = preview_key
+        
+        # 썸네일 키 업데이트 (있는 경우)
+        if thumbnail_key:
+            item.s3_thumbnail_key = thumbnail_key
+            logger.info(f"썸네일 키 업데이트: {item_id} -> {thumbnail_key}")
+        
         await db.commit()
         await db.refresh(item)
         
         logger.info(f"프리뷰 키 업데이트 완료: {item_id} -> {preview_key}")
         
+        result = {
+            "item_id": item_id,
+            "preview_key": preview_key,
+            "status": "updated"
+        }
+        
+        if thumbnail_key:
+            result["thumbnail_key"] = thumbnail_key
+        
         return SuccessResponse(
-            data={
-                "item_id": item_id,
-                "preview_key": preview_key,
-                "status": "updated"
-            },
+            data=result,
             message="프리뷰 키가 성공적으로 업데이트되었습니다"
         )
         
