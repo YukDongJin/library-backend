@@ -85,6 +85,13 @@ class LibraryItem(Base):
         comment="S3 썸네일 파일 키 (이미지/비디오만)"
     )
     
+    # S3 프리뷰 영상 키 (비디오만 해당)
+    s3_preview_key = Column(
+        String(500),
+        nullable=True,
+        comment="S3 프리뷰 영상 파일 키 (비디오만)"
+    )
+    
     # S3 원본 파일 키
     s3_key = Column(
         String(500),
@@ -169,6 +176,14 @@ class LibraryItem(Base):
             return f"{settings.BACKEND_BASE_URL}/library/library-items/file/{self.s3_thumbnail_key}"
         return None
 
+    @property
+    def preview_url(self):
+        """S3 프리뷰 영상 프록시 URL 생성"""
+        if self.s3_preview_key:
+            from app.core.config import settings
+            return f"{settings.BACKEND_BASE_URL}/library/library-items/file/{self.s3_preview_key}"
+        return None
+
     def soft_delete(self):
         """소프트 삭제 실행"""
         from datetime import datetime
@@ -188,12 +203,14 @@ class LibraryItem(Base):
             "mime_type": self.mime_type,
             "visibility": self.visibility.value,
             "s3_thumbnail_key": self.s3_thumbnail_key,
+            "s3_preview_key": self.s3_preview_key,
             "s3_key": self.s3_key,
             "file_size": self.file_size,
             "preview_text": self.preview_text,
             "original_filename": self.original_filename,
             "file_url": self.file_url,
             "thumbnail_url": self.thumbnail_url,
+            "preview_url": self.preview_url,
             "is_deleted": self.is_deleted,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

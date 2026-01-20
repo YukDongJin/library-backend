@@ -254,16 +254,32 @@ async def upload_file_and_get_url(
             db, user_id=user_id, item_in=item_data
         )
 
-        # 4. S3 Key만 반환 (URL 생성하지 않음)
+        # 5. 동영상인 경우 프리뷰 생성 Step Functions 트리거
+        execution_arn = None
+        if s3_service.is_video_file(file.content_type):
+            execution_arn = await s3_service.trigger_video_preview_generation(
+                s3_key=s3_key,
+                item_id=str(item.id)
+            )
+            if execution_arn:
+                logger.info(f"프리뷰 생성 시작: {execution_arn}")
+
+        # 6. S3 Key만 반환 (URL 생성하지 않음)
         logger.info(f"파일 업로드 완료: {file.filename} -> {s3_key}")
         
+        response_data = {
+            "item_id": str(item.id),
+            "s3_key": s3_key,
+            "filename": file.filename,
+            "file_size": str(file.size)
+        }
+        
+        if execution_arn:
+            response_data["preview_generation_started"] = True
+            response_data["execution_arn"] = execution_arn
+        
         return SuccessResponse(
-            data={
-                "item_id": str(item.id),
-                "s3_key": s3_key,
-                "filename": file.filename,
-                "file_size": str(file.size)
-            },
+            data=response_data,
             message="파일 업로드 및 S3 Key 생성 완료"
         )
         
@@ -274,4 +290,56 @@ async def upload_file_and_get_url(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="파일 업로드 중 오류가 발생했습니다"
+        )
+
+
+
+@router.post(
+    "/preview-callback",
+    response_model=SuccessResponse[Dict[str, str]],
+    summary="프리뷰 생성 완료 콜백",
+    description="Step Functions에서 프리뷰 생성 완료 후 호출하는 콜백 API"
+)
+async def preview_generation_callback(
+    item_id: str = Form(...),
+    preview_key: str = Form(...),
+    db: AsyncSession = Depends(get_db)
+) -> SuccessResponse[Dict[str, str]]:
+    """
+    프리뷰 생성 완료 콜백 API
+    - Step Functions 완료 후 Lambda에서 호출
+    - DB에 프리뷰 키 업데이트
+    """
+    try:
+        # 아이템 조회
+        item = await library_item_crud.get(db, id=item_id)
+        if not item:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="아이템을 찾을 수 없습니다"
+            )
+        
+        # 프리뷰 키 업데이트
+        item.s3_preview_key = preview_key
+        await db.commit()
+        await db.refresh(item)
+        
+        logger.info(f"프리뷰 키 업데이트 완료: {item_id} -> {preview_key}")
+        
+        return SuccessResponse(
+            data={
+                "item_id": item_id,
+                "preview_key": preview_key,
+                "status": "updated"
+            },
+            message="프리뷰 키가 성공적으로 업데이트되었습니다"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"프리뷰 콜백 처리 중 오류: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="프리뷰 콜백 처리 중 오류가 발생했습니다"
         )

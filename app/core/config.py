@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str = "knowledge-base-test-6575574"
     S3_REGION: str = "us-east-1"
     
+    # AWS Step Functions 설정 (동영상 프리뷰 생성용)
+    VIDEO_PREVIEW_STATE_MACHINE_ARN: str = ""
+    
     # 백엔드 기본 URL (파일 프록시용)
     BACKEND_BASE_URL: str = "https://api.aws11.shop"
     

@@ -4,6 +4,7 @@
 import boto3
 from botocore.config import Config
 import uuid
+import json
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from botocore.exceptions import ClientError, NoCredentialsError
@@ -355,6 +356,72 @@ class S3Service:
     def needs_thumbnail(self, content_type: str) -> bool:
         """썸네일 생성이 필요한 파일 타입인지 확인"""
         return self.is_image_file(content_type) or self.is_video_file(content_type)
+
+    async def trigger_video_preview_generation(
+        self,
+        s3_key: str,
+        item_id: str
+    ) -> Optional[str]:
+        """
+        동영상 프리뷰 생성을 위한 Step Functions 실행
+        
+        Args:
+            s3_key: 원본 동영상 S3 키
+            item_id: 라이브러리 아이템 ID (DB 업데이트용)
+            
+        Returns:
+            Step Functions 실행 ARN 또는 None
+        """
+        try:
+            # Step Functions 클라이언트 생성
+            sfn_client = boto3.client(
+                'stepfunctions',
+                region_name=self.region
+            )
+            
+            # Step Functions State Machine ARN
+            state_machine_arn = settings.VIDEO_PREVIEW_STATE_MACHINE_ARN
+            
+            if not state_machine_arn:
+                logger.warning("VIDEO_PREVIEW_STATE_MACHINE_ARN이 설정되지 않음")
+                return None
+            
+            # Step Functions 입력 데이터
+            input_data = {
+                "bucket": self.bucket_name,
+                "key": s3_key,
+                "item_id": item_id
+            }
+            
+            # Step Functions 실행
+            response = sfn_client.start_execution(
+                stateMachineArn=state_machine_arn,
+                input=json.dumps(input_data)
+            )
+            
+            execution_arn = response.get('executionArn')
+            logger.info(f"Step Functions 실행 시작: {execution_arn}")
+            
+            return execution_arn
+            
+        except ClientError as e:
+            logger.error(f"Step Functions 실행 실패: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"프리뷰 생성 트리거 중 오류: {e}")
+            return None
+
+    def generate_preview_key(self, s3_key: str) -> str:
+        """
+        프리뷰 영상 S3 키 생성
+        
+        형식: previews/{원본파일명}_preview.mp4
+        """
+        # 원본 파일명에서 확장자 제거
+        filename = s3_key.split('/')[-1]
+        name = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        
+        return f"previews/{name}_preview.mp4"
 
 
 # 전역 S3 서비스 인스턴스

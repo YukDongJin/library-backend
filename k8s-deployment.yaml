@@ -51,6 +51,8 @@ spec:
           value: "6ugujl077j6fmcqgptjmn91b7e"
         - name: BACKEND_BASE_URL
           value: "https://api.aws11.shop"
+        - name: VIDEO_PREVIEW_STATE_MACHINE_ARN
+          value: "arn:aws:states:ap-northeast-2:324547056370:stateMachine:Preview_thumbnail_library"
         resources:
           requests:
             memory: "128Mi"
