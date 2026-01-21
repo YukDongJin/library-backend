@@ -59,6 +59,7 @@ async def create_library_item(
     """
     라이브러리 아이템 생성 API
     - S3 업로드 완료 후 메타데이터 저장
+    - 동영상인 경우 프리뷰/썸네일 생성 Step Functions 자동 트리거
     """
     try:
         user_id, username = await resolve_current_user(db, current_user)
@@ -69,6 +70,18 @@ async def create_library_item(
         )
         
         logger.info(f"새 라이브러리 아이템 생성: {item.name} (사용자: {username})")
+        
+        # 동영상인 경우 프리뷰/썸네일 생성 Step Functions 트리거
+        execution_arn = None
+        if item_in.type == ItemType.video or (item_in.mime_type and item_in.mime_type.startswith('video/')):
+            execution_arn = await s3_service.trigger_video_preview_generation(
+                s3_key=item_in.s3_key,
+                item_id=str(item.id)
+            )
+            if execution_arn:
+                logger.info(f"🎬 동영상 프리뷰 생성 Step Functions 시작: {execution_arn}")
+            else:
+                logger.warning(f"⚠️ 동영상 프리뷰 생성 Step Functions 트리거 실패")
         
         return SuccessResponse(
             data=LibraryItemResponse.from_orm(item),
