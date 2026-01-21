@@ -201,6 +201,10 @@ class CRUDLibraryItem(CRUDBase[LibraryItem, LibraryItemCreate, LibraryItemUpdate
         if item.s3_key:
             await s3_service.delete_file(item.s3_key)
         
+        # 프리뷰 파일 삭제 (있는 경우)
+        if item.s3_preview_key:
+            await s3_service.delete_file(item.s3_preview_key)
+        
         # 썸네일 파일 삭제 (있는 경우)
         if item.s3_thumbnail_key:
             await s3_service.delete_file(item.s3_thumbnail_key)
